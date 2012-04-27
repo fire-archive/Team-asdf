@@ -2,11 +2,19 @@ import lejos.nxt.Motor;
 import lejos.nxt.SensorPort;
 import lejos.nxt.SensorPortListener;
 import lejos.nxt.TouchSensor;
+import lejos.nxt.UltrasonicSensor;
+import lejos.robotics.RegulatedMotor;
+import lejos.robotics.navigation.DifferentialPilot;
 
 public class Challenge01
 {
 	private TouchSensor touchSensor;
+	
+	private final SensorPort ultrasonicPort;
+	private final UltrasonicSensor ultrasonicSensor;
+	
 	private boolean done;
+	
 	public static void main(String[] args)
 	{
 		final Challenge01 robot;
@@ -20,41 +28,95 @@ public class Challenge01
 		touchPort = SensorPort.S2;
 		touchSensor = new TouchSensor(touchPort);
 		touchPort.addSensorPortListener(new TouchListener());
+		
+		ultrasonicPort = SensorPort.S1;
+		ultrasonicSensor = new UltrasonicSensor(ultrasonicPort);
 	}
 	
 	public void run()
 	{
 		// Setting Defaults
 		int distance;
-		Motor.B.setSpeed(360);
-		Motor.C.setSpeed(360);
+		Motor.B.setSpeed(720);
+		Motor.C.setSpeed(710);
 		
 		// First Hall
 		moveForwards();
 		
-		// <LEFT> First Turn
+		// <RIGHT> First Turn
 		waitForStop();
+		reverse();
+		turn(-1);
 		
 		// Second Hall
 		moveForwards();
 		
-		// <LEFT> Second Turn
+		// <RIGHT> Second Turn
 		waitForStop();
+		reverse();
+		turn(-1);
 		
 		// Third Hall
 		moveForwards();
 		
-		// <RIGHT> Third Turn
+		// <LEFT> Third Turn
 		waitForStop();
+		reverse();
+		turn(1);
 		
 		// Fourth Hall
 		moveForwards();
 		
-		// <RIGHT> Fourth Turn
+		// <LEFT> Fourth Turn
 		waitForStop();
+		reverse();
+		turn(1);
 		
 		// Final Hall
 		moveForwards();
+		
+		waitForStop();
+	}
+	
+	public void run2()
+	{
+		// Setting Defaults
+		int distance;
+		Motor.B.setSpeed(720);
+		Motor.C.setSpeed(710);
+		
+		// First Hall
+		moveForwards();
+		
+		// <RIGHT> First Turn
+		waitForDistance(8);
+		turn(1);
+		
+		// Second Hall
+		moveForwards();
+		
+		// <RIGHT> Second Turn
+		waitForDistance(8);
+		turn(1);
+		
+		// Third Hall
+		moveForwards();
+		
+		// <LEFT> Third Turn
+		waitForDistance(8);
+		turn(-1);
+		
+		// Fourth Hall
+		moveForwards();
+		
+		// <LEFT> Fourth Turn
+		waitForDistance(8);
+		turn(-1);
+		
+		// Final Hall
+		moveForwards();
+		
+		waitForDistance(8);
 	}
 	
 	private void moveForwards()
@@ -80,8 +142,8 @@ public class Challenge01
 	 */
 	private void turn(int direction)
 	{
-		Motor.B.rotate(90 * direction, true);
-		Motor.C.rotate(-90 * direction, true);
+		Motor.B.rotate(190 * direction, true);
+		Motor.C.rotate(-190 * direction);
 	}
 	
 	private void waitForStop()
@@ -99,8 +161,6 @@ public class Challenge01
 			{
 			}
 		}
-		
-		done = false;
 	}
 	
 	private void stop()
@@ -110,8 +170,48 @@ public class Challenge01
 			Motor.B.stop();
 			Motor.C.stop();
 			
+			//Motor.B.rotate(-20, true);
+			//Motor.C.rotate(-20, true);
+			
 			done = true;
 			notifyAll();
 		}
+	}
+	
+	private void reverse()
+	{
+		if(done == true) 
+		{
+			done = false;
+		}
+		synchronized(this)
+		{
+			Motor.B.rotate(-90, true);
+			Motor.C.rotate(-90);	
+		}
+	}
+	
+	private int waitForDistance(final int max)
+	{
+		int distance;
+		
+		do
+		{
+			try
+			{
+				// pause 100 ms between reads...
+				// this is a LeJOS issue
+				// later versions of LeJOS won't require this
+				Thread.sleep(100);
+			}
+			catch (InterruptedException ex)
+			{
+			}
+			
+			distance = ultrasonicSensor.getDistance();
+		}
+		
+		while(distance > max);
+		return (distance);
 	}
 }
